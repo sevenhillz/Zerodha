@@ -1,0 +1,51 @@
+-----------------------------------------------
+1. Vagrant file to create two virtual machines in Virtual box(Ubuntu) for Ansible Server and Client.
+--------------------------------------------------------
+
+Vagrant.configure("2") do |config|  
+config.vm.define "ansible" do |ansible|
+  ansible.vm.box = "ubuntu/trusty64"
+  ansible.vm.network "private_network", ip: "192.168.1.90"
+  ansible.vm.hostname = "ansible"
+  end
+  config.vm.define "client" do |client|
+  client.vm.box = "ubuntu/trusty64"
+  client.vm.network "private_network", ip: "192.168.1.91"
+  client.vm.hostname = "client"
+end
+end
+---------------------------------------------------------
+2. Ansible Playbook for Configuration and Installation.
+----------------------------------------------------------
+---
+- hosts: 192.168.1.90
+	  user: root
+	  become: true
+tasks:
+ - name: Create a login user
+    	 user:
+      		name: testuser
+      		groups: # Empty by default, here we give it some groups
+       			- docker
+      		  - sudo
+      		state: present
+      		shell: /bin/bash       # Defaults to /bin/bash
+      		system: no             # Defaults to no
+    	    createhome: yes        # Defaults to yes
+    		  home: /home/testuser  # Defaults to /home/<username>
+- name: set timezone to Asia/Kolkata
+ 	 timezone:
+    		name: Asia/Kolkata
+- name: uploading random file with owner and permissions
+  copy:
+    src: /randomfile
+    dest: /home/testuser
+    owner: testuser
+    group: testuser
+    mode: 0644
+- name: "Installing software Packages"
+  	  apt: pkg={{item}} state=installed
+              with_items:
+		- python
+		- supervisord
+		- consul
